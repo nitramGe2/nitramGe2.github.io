@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/nitramge2.github.io/static/css/main.4f2fc5dd.css",
-    "main.js": "/nitramge2.github.io/static/js/main.9c42064b.js",
-    "static/js/453.194e117e.chunk.js": "/nitramge2.github.io/static/js/453.194e117e.chunk.js",
-    "index.html": "/nitramge2.github.io/index.html",
-    "main.4f2fc5dd.css.map": "/nitramge2.github.io/static/css/main.4f2fc5dd.css.map",
-    "main.9c42064b.js.map": "/nitramge2.github.io/static/js/main.9c42064b.js.map",
-    "453.194e117e.chunk.js.map": "/nitramge2.github.io/static/js/453.194e117e.chunk.js.map"
+    "main.css": "/static/css/main.4f2fc5dd.css",
+    "main.js": "/static/js/main.57aee21e.js",
+    "static/js/453.194e117e.chunk.js": "/static/js/453.194e117e.chunk.js",
+    "index.html": "/index.html",
+    "main.4f2fc5dd.css.map": "/static/css/main.4f2fc5dd.css.map",
+    "main.57aee21e.js.map": "/static/js/main.57aee21e.js.map",
+    "453.194e117e.chunk.js.map": "/static/js/453.194e117e.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.4f2fc5dd.css",
-    "static/js/main.9c42064b.js"
+    "static/js/main.57aee21e.js"
   ]
 }
