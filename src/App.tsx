@@ -345,21 +345,31 @@ const TournamentBracket = () => {
       const lbMapping: { [key: number]: number } = { 1: 12, 2: 11, 3: 10, 4: 9 };
       newMatches[lbMapping[matchId]].p2 = loser;
     } else if (matchId >= 5 && matchId <= 8) {
-      if (matchId === 5 || matchId === 6) {
-        if (!newMatches[15].p1) newMatches[15].p1 = winner;
-        else newMatches[15].p2 = winner;
-      } else {
-        if (!newMatches[16].p1) newMatches[16].p1 = winner;
-        else newMatches[16].p2 = winner;
+      if (matchId === 5) {
+        newMatches[15].p1 = winner;
+      }
+      else if (matchId === 6) {
+        newMatches[15].p2 = winner;
+      }
+      else if (matchId === 7) {
+        newMatches[16].p1 = winner;
+      }
+      else if (matchId === 8) {
+        newMatches[16].p2 = winner;
       }
       newMatches[matchId + 4].p1 = loser;
     } else if (matchId >= 9 && matchId <= 12) {
-      if (matchId === 9 || matchId === 10) {
-        if (matchId === 10) newMatches[13].p1 = winner;
-        else newMatches[13].p2 = winner;
-      } else {
-        if (matchId === 12) newMatches[14].p1 = winner;
-        else newMatches[14].p2 = winner;
+      if (matchId === 9) {
+        newMatches[13].p1 = winner;
+      }
+      else if (matchId === 10) {
+        newMatches[13].p2 = winner;
+      }
+      else if (matchId === 11) {
+        newMatches[14].p1 = winner;
+      }
+      else if (matchId === 12) {
+        newMatches[14].p2 = winner;
       }
       newPlacements[loser] = 12;
     } else if (matchId === 13 || matchId === 14) {
@@ -367,14 +377,20 @@ const TournamentBracket = () => {
       else newMatches[17].p2 = winner;
       newPlacements[loser] = 8;
     } else if (matchId === 15 || matchId === 16) {
-      if (!newMatches[20].p1) newMatches[20].p1 = winner;
-      else newMatches[20].p2 = winner;
+      if (matchId === 15) {
+        newMatches[20].p1 = winner;
+      } else {
+        newMatches[20].p2 = winner;
+      }
       if (matchId === 15) newMatches[17].p1 = loser;
       else newMatches[18].p1 = loser;
     } else if (matchId === 17 || matchId === 18) {
-      if (!newMatches[19].p1) newMatches[19].p1 = winner;
-      else newMatches[19].p2 = winner;
-      newPlacements[loser] = 5;
+      if (matchId === 17) {
+        newMatches[19].p1 = winner;
+      } else {
+        newMatches[19].p2 = winner;
+      }
+      newPlacements[loser] = matchId === 17 ? 6 : 5; // Konsistent: 17-Loser = 6., 18-Loser = 5.
     } else if (matchId === 19) {
       newMatches[21].p2 = winner;
       newPlacements[loser] = 4;
@@ -439,21 +455,25 @@ const TournamentBracket = () => {
             const lbMapping: { [key: number]: number } = { 1: 12, 2: 11, 3: 10, 4: 9 };
             newMatches[lbMapping[id]].p2 = loser;
           } else if (id >= 5 && id <= 8) {
-            if (id === 5 || id === 6) {
-              if (!newMatches[15].p1) newMatches[15].p1 = winner;
-              else newMatches[15].p2 = winner;
-            } else {
-              if (!newMatches[16].p1) newMatches[16].p1 = winner;
-              else newMatches[16].p2 = winner;
+if (id === 5) {
+              newMatches[15].p1 = winner;
+            } else if (id === 6) {
+              newMatches[15].p2 = winner;
+            } else if (id === 7) {
+              newMatches[16].p1 = winner;
+            } else if (id === 8) {
+              newMatches[16].p2 = winner;
             }
             newMatches[id + 4].p1 = loser;
           } else if (id >= 9 && id <= 12) {
-            if (id === 9 || id === 10) {
-              if (id === 10) newMatches[13].p1 = winner;
-              else newMatches[13].p2 = winner;
-            } else {
-              if (id === 12) newMatches[14].p1 = winner;
-              else newMatches[14].p2 = winner;
+            if (id === 9) {
+              newMatches[13].p2 = winner;
+            } else if (id === 10) {
+              newMatches[13].p1 = winner;
+            } else if (id === 11) {
+              newMatches[14].p2 = winner;
+            } else if (id === 12) {
+              newMatches[14].p1 = winner;
             }
             newPlacements[loser] = 12;
           } else if (id === 13 || id === 14) {
@@ -461,14 +481,20 @@ const TournamentBracket = () => {
             else newMatches[17].p2 = winner;
             newPlacements[loser] = 8;
           } else if (id === 15 || id === 16) {
-            if (!newMatches[20].p1) newMatches[20].p1 = winner;
-            else newMatches[20].p2 = winner;
+            if (id === 15) {
+              newMatches[20].p1 = winner;
+            } else {
+              newMatches[20].p2 = winner;
+            }
             if (id === 15) newMatches[17].p1 = loser;
             else newMatches[18].p1 = loser;
           } else if (id === 17 || id === 18) {
-            if (!newMatches[19].p1) newMatches[19].p1 = winner;
-            else newMatches[19].p2 = winner;
-            newPlacements[loser] = 6;
+            if (id === 17) {
+              newMatches[19].p1 = winner;
+            } else {
+              newMatches[19].p2 = winner;
+            }
+            newPlacements[loser] = id === 17 ? 6 : 5; // Konsistent mit handleMatchWinner
           } else if (id === 19) {
             newMatches[21].p2 = winner;
             newPlacements[loser] = 4;
