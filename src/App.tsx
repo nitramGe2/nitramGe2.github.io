@@ -116,10 +116,11 @@ const TournamentBracket = () => {
   }, []);
 
   // Synchronisiere Warnungs-Sichtbarkeit mit Turnier-Status
+  /*
   useEffect(() => {
     setShowWarning(!isTournamentComplete());
   }, [matches]);
-
+*/
   const createInitialMatches = (): Matches => {
     return {
       1: { p1: 'Niuzi', p2: 'Mugi', winner: null, stage: 'UBR1' },
