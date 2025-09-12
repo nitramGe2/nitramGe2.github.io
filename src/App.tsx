@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, RotateCcw, Users, ChevronRight, Award, Shuffle, Undo, Redo, Ticket, ChevronDown, ChevronUp, AlertTriangle, X, Twitter } from 'lucide-react';
+import { Trophy, RotateCcw, Users, ChevronRight, Award, Shuffle, Undo, Redo, Ticket, ChevronDown, ChevronUp, AlertTriangle, X } from 'lucide-react';
+import { SiX, SiYoutube } from '@icons-pack/react-simple-icons';
 
 // Definiere Typen für die Datenstrukturen
 interface Player {
@@ -56,7 +57,7 @@ const TournamentBracket = () => {
     'Wallace': { points: 95, participating: false, goldenTicket: false },
     'CAL Sandbox': { points: 90, participating: true, goldenTicket: false },
     'Ardentoas': { points: 90, participating: false, goldenTicket: false },
-    'GençAslan:)': { points: 85, participating: false, goldenTicket: false },
+    'GençAslan': { points: 85, participating: false, goldenTicket: false },
     'Viiper': { points: 80, participating: true, goldenTicket: false },
     'Asaf': { points: 15, participating: true, goldenTicket: false },
     'Ryley': { points: 0, participating: true, goldenTicket: false },
@@ -80,6 +81,78 @@ const TournamentBracket = () => {
     12: 40,
   };
 
+  const getMinTournamentPoints = (player: string, eliminatedCount: number): number => {
+    // Wenn der Spieler bereits eine Platzierung hat, geben wir die entsprechenden Punkte zurück
+    if (placements[player]) {
+      return placementPoints[placements[player]];
+    }
+
+    // Wenn der Spieler nicht teilnimmt, keine Punkte
+    if (!initialPlayers[player].participating) {
+      return 0;
+    }
+
+    // Prüfe, in welchem Match der Spieler aktuell ist
+    let latestMatchId: number | null = null;
+    let latestStage: string | null = null;
+
+    Object.entries(matches).forEach(([id, match]) => {
+      const numId = parseInt(id);
+      if (match.p1 === player || match.p2 === player) {
+        // Wenn das Match noch nicht entschieden ist, ist dies das aktuelle Match
+        if (!match.winner) {
+          if (!latestMatchId || numId > latestMatchId) {
+            latestMatchId = numId;
+            latestStage = match.stage;
+          }
+        }
+      }
+    });
+
+    // Wenn der Spieler in keinem offenen Match ist, aber noch nicht eliminiert, ist er vermutlich in einer früheren Runde verloren
+    if (!latestMatchId) {
+      return 40; // Mindestens 9.-12. Platz, da der Spieler teilnimmt
+    }
+    
+    // Bestimme die minimal garantierte Platzierung basierend auf dem aktuellen Match
+    if (latestStage === 'LBR2') {
+      return 50;
+    } else if (latestStage === 'UBR3' || latestStage === 'LBR3') {
+      // Spieler in UBR3 (Match 15 oder 16) -> früheste Eliminierung ist LBR3 (Match 17 oder 18) -> 5.-6. Platz
+      return 60;
+    } else if (latestStage === 'UBF' || latestStage === 'LBF') {
+      // Spieler in UBF (Match 20 und dann 21) -> früheste Eliminierung ist LBF (Match 21) -> 3. Platz
+      return 80;
+    } else if (latestStage === 'LBR4') {
+      // Spieler in LBR4 (Match 19) -> früheste Eliminierung ist LBF (Match 21) -> 4. Platz
+      return 70;
+    } //else if (latestStage === 'LBF') {
+      // Spieler in LBF (Match 21) -> früheste Eliminierung ist GF1 (Match 22) -> 3. Platz
+      //return 80;}
+      
+      else if (latestStage === 'GF1') {
+      // Spieler in GF1 (Match 22) -> früheste Eliminierung ist 2. Platz (wenn p2) oder 1. Platz (wenn p1)
+      const match = matches[latestMatchId];
+      if (match.p1 === player) {
+        return 100; // Garantiert 1. Platz, wenn p1 gewinnt
+      }
+      return 90; // Garantiert 2. Platz, wenn p2
+    } else if (latestStage === 'GF2') {
+      // Spieler in GF2 (Match 23) -> mindestens 2. Platz
+      return 90;
+    }
+
+    // Standardfall: mindestens 9.-12. Platz basierend auf eliminatedCount
+    if (eliminatedCount < 4) return 40;
+    if (eliminatedCount < 6) return 50;
+    if (eliminatedCount < 8) return 60;
+    if (eliminatedCount < 9) return 70;
+    if (eliminatedCount < 10) return 80;
+    if (eliminatedCount < 11) return 90;
+    if (eliminatedCount < 12) return 100;
+    return 40;
+  };
+
   const [matches, setMatches] = useState<Matches>({});
   const [placements, setPlacements] = useState<Placements>({});
   const [goldenTickets, setGoldenTickets] = useState<{ [key: string]: boolean }>(
@@ -101,6 +174,7 @@ const TournamentBracket = () => {
     leaderboard: true,
   });
   const [showWarning, setShowWarning] = useState<boolean>(true);
+  const [showTiebreakerWarning, setShowTiebreakerWarning] = useState<boolean>(true);
 
   // Toggle-Funktion für Sektionen
   const toggleSection = (section: keyof typeof sectionVisibility) => {
@@ -115,12 +189,6 @@ const TournamentBracket = () => {
     resetTournament();
   }, []);
 
-  // Synchronisiere Warnungs-Sichtbarkeit mit Turnier-Status
-  /*
-  useEffect(() => {
-    setShowWarning(!isTournamentComplete());
-  }, [matches]);
-*/
   const createInitialMatches = (): Matches => {
     return {
       1: { p1: 'Niuzi', p2: 'Mugi', winner: null, stage: 'UBR1' },
@@ -289,17 +357,20 @@ const TournamentBracket = () => {
     return newPlacements;
   };
 
-  const assignGoldenTicket = (newPlacements: Placements, newGoldenTickets: { [key: string]: boolean }) => {
+  const assignGoldenTicket = (newPlacements: Placements, currentGoldenTickets: { [key: string]: boolean }) => {
     const winner = Object.keys(newPlacements).find((player) => newPlacements[player] === 1);
-    const runnerUp = Object.keys(newPlacements).find((player) => newPlacements[player] === 2);
-    const thirdPlace = Object.keys(newPlacements).find((player) => newPlacements[player] === 3);
+    const newGoldenTickets = { ...currentGoldenTickets };
 
+    // Remove Golden Tickets from all players except those in initialPlayers
+    Object.keys(newGoldenTickets).forEach((player) => {
+      if (!initialPlayers[player].goldenTicket) {
+        newGoldenTickets[player] = false;
+      }
+    });
+
+    // Assign Golden Ticket to the winner if they don't already have one
     if (winner && !newGoldenTickets[winner]) {
       newGoldenTickets[winner] = true;
-    } else if (winner && runnerUp && newGoldenTickets[winner] && !newGoldenTickets[runnerUp]) {
-      newGoldenTickets[runnerUp] = true;
-    } else if (winner && runnerUp && thirdPlace && newGoldenTickets[winner] && newGoldenTickets[runnerUp] && !newGoldenTickets[thirdPlace]) {
-      newGoldenTickets[thirdPlace] = true;
     }
 
     return newGoldenTickets;
@@ -326,6 +397,10 @@ const TournamentBracket = () => {
 
       affectedPlayers.forEach((player) => {
         delete newPlacements[player];
+        // Remove Golden Ticket if not in initialPlayers
+        if (!initialPlayers[player]?.goldenTicket) {
+          newGoldenTickets[player] = false;
+        }
       });
 
       newPlacements = resetDependentMatches(matchId, newMatches);
@@ -347,29 +422,23 @@ const TournamentBracket = () => {
     } else if (matchId >= 5 && matchId <= 8) {
       if (matchId === 5) {
         newMatches[15].p1 = winner;
-      }
-      else if (matchId === 6) {
+      } else if (matchId === 6) {
         newMatches[15].p2 = winner;
-      }
-      else if (matchId === 7) {
+      } else if (matchId === 7) {
         newMatches[16].p1 = winner;
-      }
-      else if (matchId === 8) {
+      } else if (matchId === 8) {
         newMatches[16].p2 = winner;
       }
       newMatches[matchId + 4].p1 = loser;
     } else if (matchId >= 9 && matchId <= 12) {
       if (matchId === 9) {
-        newMatches[13].p1 = winner;
-      }
-      else if (matchId === 10) {
         newMatches[13].p2 = winner;
-      }
-      else if (matchId === 11) {
-        newMatches[14].p1 = winner;
-      }
-      else if (matchId === 12) {
+      } else if (matchId === 10) {
+        newMatches[13].p1 = winner;
+      } else if (matchId === 11) {
         newMatches[14].p2 = winner;
+      } else if (matchId === 12) {
+        newMatches[14].p1 = winner;
       }
       newPlacements[loser] = 12;
     } else if (matchId === 13 || matchId === 14) {
@@ -390,7 +459,7 @@ const TournamentBracket = () => {
       } else {
         newMatches[19].p2 = winner;
       }
-      newPlacements[loser] = matchId === 17 ? 6 : 5; // Konsistent: 17-Loser = 6., 18-Loser = 5.
+      newPlacements[loser] = matchId === 17 ? 6 : 5;
     } else if (matchId === 19) {
       newMatches[21].p2 = winner;
       newPlacements[loser] = 4;
@@ -455,7 +524,7 @@ const TournamentBracket = () => {
             const lbMapping: { [key: number]: number } = { 1: 12, 2: 11, 3: 10, 4: 9 };
             newMatches[lbMapping[id]].p2 = loser;
           } else if (id >= 5 && id <= 8) {
-if (id === 5) {
+            if (id === 5) {
               newMatches[15].p1 = winner;
             } else if (id === 6) {
               newMatches[15].p2 = winner;
@@ -494,7 +563,7 @@ if (id === 5) {
             } else {
               newMatches[19].p2 = winner;
             }
-            newPlacements[loser] = id === 17 ? 6 : 5; // Konsistent mit handleMatchWinner
+            newPlacements[loser] = id === 17 ? 6 : 5;
           } else if (id === 19) {
             newMatches[21].p2 = winner;
             newPlacements[loser] = 4;
@@ -537,22 +606,31 @@ if (id === 5) {
   };
 
   const getRankings = (): PlayerRanking[] => {
-    const currentPoints = getCurrentPoints();
+    const eliminatedCount = Object.keys(placements).length;
     return Object.entries(initialPlayers)
-      .map(([name, data]) => ({
-        name,
-        basePoints: data.points,
-        tournamentPoints: placementPoints[placements[name]] || 0,
-        totalPoints: currentPoints[name],
-        placement: placements[name] || '-',
-        participating: data.participating,
-        goldenTicket: goldenTickets[name],
-      }))
+      .map(([name, data]) => {
+        const tournamentPoints = getMinTournamentPoints(name, eliminatedCount);
+        return {
+          name,
+          basePoints: data.points,
+          tournamentPoints,
+          totalPoints: data.points + tournamentPoints,
+          placement: placements[name] || '-',
+          participating: data.participating,
+          goldenTicket: goldenTickets[name],
+        };
+      })
       .sort((a, b) => b.totalPoints - a.totalPoints);
   };
 
   const isTournamentComplete = () => {
-    return matches[22]?.winner !== null || matches[23]?.winner !== null;
+    const gf1 = matches[22];
+    if (!gf1) return false;
+    const winner = gf1.winner;
+    if (winner === null) return false;
+    if (winner === gf1.p1) return true;
+    const gf2 = matches[23];
+    return gf2 !== undefined && gf2.winner !== null;
   };
 
   const getQualified = (): PlayerRanking[] => {
@@ -676,7 +754,7 @@ if (id === 5) {
                 className="flex items-center gap-2 bg-purple-700 hover:bg-purple-900 text-gray-100 px-4 py-2 rounded-lg transition-colors"
               >
                 <Shuffle className="w-4 h-4" />
-                Zufällig ausfüllen
+                Fill out randomly
               </button>
               <button
                 onClick={resetTournament}
@@ -693,7 +771,8 @@ if (id === 5) {
             <div className="bg-yellow-600 text-white p-4 rounded-lg mb-6 flex items-center gap-2 relative">
               <AlertTriangle className="w-5 h-5" />
               <span>
-                Not all games have been decided yet. The leaderboard and world finals participants are not up to date.
+                The total points and qualification liste are being updated in real time. If you notice any bugs or errors,
+                reset the bracket or reload the page to start again.
               </span>
               <button
                 onClick={() => setShowWarning(false)}
@@ -728,13 +807,13 @@ if (id === 5) {
                     ))}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <h3 className="font-semibold text-base text-gray-200 mb-2">Quarter Finals</h3>
+                    <h3 className="font-semibold text-base text-gray-200 mb-2">Round 2 / Quarter Finals</h3>
                     {[5, 6, 7, 8].map((id) => (
                       <MatchBox key={id} match={matches[id]} matchId={id} />
                     ))}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <h3 className="font-semibold text-base text-gray-200 mb-0">Semi Finals</h3>
+                    <h3 className="font-semibold text-base text-gray-200 mb-0">Round 3 / Semi Finals</h3>
                     <div className="flex-1 flex flex-col justify-center gap-8">
                       <MatchBox match={matches[15]} matchId={15} />
                       <MatchBox match={matches[16]} matchId={16} />
@@ -825,7 +904,27 @@ if (id === 5) {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-4"></div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {showWarning && (
+                <div className="grid grid-cols-1 gap-4 mt-4">  {/* Changed gap-4 to gap-0 */}
+                  <div className="bg-yellow-600 text-white p-4 rounded-lg flex items-center gap-2 relative w-full max-w-7xl mx-auto">
+                    <AlertTriangle className="w-5 h-5" />
+                    <span>
+                      This application does not account for tiebreakers in cases where multiple players have equal total points for the world finals qualification.
+                      Please check for these cases yourself.
+                    </span>
+                    <button
+                      onClick={() => setShowWarning(false)}
+                      className="absolute top-1/2 right-4 transform -translate-y-1/2 text-white hover:text-gray-200 p-1"
+                      aria-label="Close warning"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Qualifikations-Übersicht */}
             <div className="bg-gray-700 rounded-xl shadow-2xl p-4 mb-6 border-gray-500 w-full">
@@ -856,7 +955,7 @@ if (id === 5) {
                     </div>
                   </div>
                   <div className="bg-gray-700 rounded-lg p-4 border-gray-500">
-                    <h3 className="font-bold text-yellow-400 mb-3 flex items-center gap-2">
+                    <h3 className="font-bold text-yellow-500 mb-3 flex items-center gap-2">
                       <Ticket className="w-5 h-5" />
                       Golden Ticket Owners
                     </h3>
@@ -877,41 +976,41 @@ if (id === 5) {
 
             {/* Komplette Rangliste */}
             <div className="bg-gray-700 rounded-xl shadow-2xl p-4 border-gray-500 w-full">
-              <h2
-                className="text-2xl font-bold text-fuchsia-400 mb-6 flex items-center gap-2 cursor-pointer"
-                onClick={() => toggleSection('leaderboard')}
-              >
-                {sectionVisibility.leaderboard ? (
-                  <ChevronDown className="w-6 h-6" />
-                ) : (
+                <h2
+                  className="text-2xl font-bold text-fuchsia-400 mb-6 flex items-center gap-2 cursor-pointer"
+                  onClick={() => toggleSection('leaderboard')}
+                >
+                  {sectionVisibility.leaderboard ? (
+                    <ChevronDown className="w-6 h-6" />
+                  ) : (
                   <ChevronUp className="w-6 h-6" />
-                )}
-                Leaderboard (relevant)
-              </h2>
+                  )}
+                  Leaderboard (relevant)
+                </h2>
               {sectionVisibility.leaderboard && (
-                <div className="overflow-x-auto">
-                  <div className="w-full">
+              <div className="overflow-x-auto rounded-lg">
+                <div className="w-full">
                     <div className="space-y-2">
                       <div className="flex bg-gray-700 rounded p-2 border-gray-500">
-                        <span className="flex-1 px-4 py-2 text-left text-sm font-semibold text-gray-200">Rank</span>
+                        <span className="w-12 py-2 text-left text-sm font-semibold text-gray-200">Rank</span>
                         <span className="flex-1 px-4 py-2 text-left text-sm font-semibold text-gray-200">Player</span>
                         <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Participation</span>
                         <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Placement</span>
                         <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Starting Points</span>
-                        <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Tournament Points</span>
+                        <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">(Min.) Tournament Points</span>
                         <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Total</span>
-                        <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Status</span>
+                        <span className="flex-1 px-4 py-2 text-right text-sm font-semibold text-gray-200">Status</span>
                       </div>
                       {getRankings().map((player, index, rankings) => {
                         const isQualified = getQualified().some((q) => q.name === player.name);
                         return (
                           <div
                             key={player.name}
-                            className={`flex items-center bg-gray-600 rounded-lg p-2 border-gray-500 ${
+                            className={`flex items-center bg-gray-600 rounded-lg p-2 border-gray-500 min-w-full ${
                               player.goldenTicket || isQualified ? 'bg-gray-500' : 'bg-gray-800'
                             }`}
                           >
-                            <span className="flex-1 px-4 py-2 font-semibold text-gray-200">{index + 1}</span>
+                            <span className="w-12 px-2 py-2 font-semibold text-gray-200">{index + 1}</span>
                             <span className="flex-1 px-4 py-2 font-medium flex items-center gap-2 text-gray-200">
                               {player.name}
                               {player.goldenTicket}
@@ -938,15 +1037,15 @@ if (id === 5) {
                             <span className="flex-1 px-4 py-2 text-center font-bold text-gray-100">{player.totalPoints}</span>
                             <span className="flex-1 px-4 py-2 text-center">
                               {player.goldenTicket ? (
-                                <span className="bg-yellow-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                                <span className="inline-block bg-yellow-600 text-white px-2 py-1 rounded-full text-xs font-medium whitespace-normal break-words">
                                   Golden Ticket
                                 </span>
                               ) : isQualified ? (
-                                <span className="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                                <span className="inline-block bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium whitespace-normal break-words">
                                   Qualified
                                 </span>
                               ) : (
-                                <span className="bg-gray-600 text-gray-300 px-3 py-1 rounded-full text-xs">
+                                <span className="inline-block bg-gray-600 text-gray-300 px-2 py-1 rounded-full text-xs whitespace-normal break-words">
                                   Not qualified
                                 </span>
                               )}
@@ -957,22 +1056,32 @@ if (id === 5) {
                     </div>
                   </div>
                 </div>
-              )}
+              )}  
             </div>
             
             {/* Footer mit Name und Twitter-Button */}
             <div className="flex justify-between items-center mt-6 text-gray-300">
               <span className="text-sm">Created by nitramGe</span>
-              <a
-                href="https://x.com/nitramGe_Felix"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                aria-label="Follow me :)"
-              >
-                <Twitter className="w-5 h-5" />
-                Follow
-              </a>
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://x.com/nitramGe_Felix"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-right gap-2 px-3 py-1 bg-black hover:text-gray-400 text-white rounded-lg transition-colors"
+                  aria-label="Follow me on Twitter :)"
+                >
+                  <SiX className="w-5 h-5" />
+                </a>
+                <a
+                  href="https//youtube.com/nitramGe"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-right gap-2 px-3 py-1 bg-red-600 hover:bg-red-800 text-white rounded-lg transition-colors"
+                  aria-label="Follow me on Youtube too :)"
+                >
+                  <SiYoutube className="w-5 h-5" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
