@@ -771,7 +771,7 @@ const TournamentBracket = () => {
             <div className="bg-yellow-700 text-white p-4 rounded-lg mb-6 flex items-center gap-2 relative">
               <AlertTriangle className="w-5 h-5" />
               <span>
-                The total points and qualification liste are being updated in real time. If you notice any bugs or errors,
+                The leaderboard and qualified players list are being updated in real time. If you notice any bugs or errors,
                 reset the bracket or reload the page to start again.
               </span>
               <button
