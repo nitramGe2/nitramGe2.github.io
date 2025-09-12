@@ -768,7 +768,7 @@ const TournamentBracket = () => {
 
           {/* Warnung bei unvollständigem Turnier mit X-Button */}
           {!isTournamentComplete() && showWarning && (
-            <div className="bg-yellow-600 text-white p-4 rounded-lg mb-6 flex items-center gap-2 relative">
+            <div className="bg-yellow-700 text-white p-4 rounded-lg mb-6 flex items-center gap-2 relative">
               <AlertTriangle className="w-5 h-5" />
               <span>
                 The total points and qualification liste are being updated in real time. If you notice any bugs or errors,
@@ -906,23 +906,22 @@ const TournamentBracket = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {showWarning && (
-                <div className="grid grid-cols-1 gap-4 mt-4">  {/* Changed gap-4 to gap-0 */}
-                  <div className="bg-yellow-600 text-white p-4 rounded-lg flex items-center gap-2 relative w-full max-w-7xl mx-auto">
-                    <AlertTriangle className="w-5 h-5" />
-                    <span>
+              {showTiebreakerWarning && (
+                  <div className="bg-yellow-700 text-white p-4 rounded-lg flex items-center relative gap-2 mt-4">
+                    {/*<div className="flex items-center gap-2 flex-1 min-w-0">*/}
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0"/>
+                    <span className="pr-10 text-medium">
                       This application does not account for tiebreakers in cases where multiple players have equal total points for the world finals qualification.
                       Please check for these cases yourself.
                     </span>
                     <button
-                      onClick={() => setShowWarning(false)}
+                      onClick={() => setShowTiebreakerWarning(false)}
                       className="absolute top-1/2 right-4 transform -translate-y-1/2 text-white hover:text-gray-200 p-1"
                       aria-label="Close warning"
                     >
                       <X className="w-6 h-6" />
                     </button>
                   </div>
-                </div>
               )}
             </div>
 
