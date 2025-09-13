@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, RotateCcw, Users, ChevronRight, Award, Shuffle, Undo, Redo, Ticket, ChevronDown, ChevronUp, AlertTriangle, X } from 'lucide-react';
+import { Trophy, RotateCcw, ChevronDown, ChevronUp, Shuffle, Undo, Redo, Ticket, AlertTriangle, X } from 'lucide-react';
 import { SiX, SiYoutube } from '@icons-pack/react-simple-icons';
 
 // Definiere Typen für die Datenstrukturen
@@ -38,7 +38,6 @@ interface PlayerRanking {
   placement: string | number;
   participating: boolean;
   goldenTicket: boolean;
-  rank?: number;
 }
 
 const TournamentBracket = () => {
@@ -82,24 +81,20 @@ const TournamentBracket = () => {
   };
 
   const getMinTournamentPoints = (player: string, eliminatedCount: number): number => {
-    // Wenn der Spieler bereits eine Platzierung hat, geben wir die entsprechenden Punkte zurück
     if (placements[player]) {
       return placementPoints[placements[player]];
     }
 
-    // Wenn der Spieler nicht teilnimmt, keine Punkte
     if (!initialPlayers[player].participating) {
       return 0;
     }
 
-    // Prüfe, in welchem Match der Spieler aktuell ist
     let latestMatchId: number | null = null;
     let latestStage: string | null = null;
 
     Object.entries(matches).forEach(([id, match]) => {
       const numId = parseInt(id);
       if (match.p1 === player || match.p2 === player) {
-        // Wenn das Match noch nicht entschieden ist, ist dies das aktuelle Match
         if (!match.winner) {
           if (!latestMatchId || numId > latestMatchId) {
             latestMatchId = numId;
@@ -109,40 +104,28 @@ const TournamentBracket = () => {
       }
     });
 
-    // Wenn der Spieler in keinem offenen Match ist, aber noch nicht eliminiert, ist er vermutlich in einer früheren Runde verloren
     if (!latestMatchId) {
-      return 40; // Mindestens 9.-12. Platz, da der Spieler teilnimmt
+      return 40;
     }
-    
-    // Bestimme die minimal garantierte Platzierung basierend auf dem aktuellen Match
+
     if (latestStage === 'LBR2') {
       return 50;
     } else if (latestStage === 'UBR3' || latestStage === 'LBR3') {
-      // Spieler in UBR3 (Match 15 oder 16) -> früheste Eliminierung ist LBR3 (Match 17 oder 18) -> 5.-6. Platz
       return 60;
     } else if (latestStage === 'UBF' || latestStage === 'LBF') {
-      // Spieler in UBF (Match 20 und dann 21) -> früheste Eliminierung ist LBF (Match 21) -> 3. Platz
       return 80;
     } else if (latestStage === 'LBR4') {
-      // Spieler in LBR4 (Match 19) -> früheste Eliminierung ist LBF (Match 21) -> 4. Platz
       return 70;
-    } //else if (latestStage === 'LBF') {
-      // Spieler in LBF (Match 21) -> früheste Eliminierung ist GF1 (Match 22) -> 3. Platz
-      //return 80;}
-      
-      else if (latestStage === 'GF1') {
-      // Spieler in GF1 (Match 22) -> früheste Eliminierung ist 2. Platz (wenn p2) oder 1. Platz (wenn p1)
+    } else if (latestStage === 'GF1') {
       const match = matches[latestMatchId];
       if (match.p1 === player) {
-        return 100; // Garantiert 1. Platz, wenn p1 gewinnt
+        return 100;
       }
-      return 90; // Garantiert 2. Platz, wenn p2
+      return 90;
     } else if (latestStage === 'GF2') {
-      // Spieler in GF2 (Match 23) -> mindestens 2. Platz
       return 90;
     }
 
-    // Standardfall: mindestens 9.-12. Platz basierend auf eliminatedCount
     if (eliminatedCount < 4) return 40;
     if (eliminatedCount < 6) return 50;
     if (eliminatedCount < 8) return 60;
@@ -176,7 +159,6 @@ const TournamentBracket = () => {
   const [showWarning, setShowWarning] = useState<boolean>(true);
   const [showTiebreakerWarning, setShowTiebreakerWarning] = useState<boolean>(true);
 
-  // Toggle-Funktion für Sektionen
   const toggleSection = (section: keyof typeof sectionVisibility) => {
     setSectionVisibility((prev) => ({
       ...prev,
@@ -184,7 +166,6 @@ const TournamentBracket = () => {
     }));
   };
 
-  // Initialisiere alle Matches
   useEffect(() => {
     resetTournament();
   }, []);
@@ -292,7 +273,6 @@ const TournamentBracket = () => {
     const dependentIds = findDependentMatches(matchId);
     const newPlacements = { ...placements };
 
-    // Lösche Platzierungen für Spieler in abhängigen Matches
     dependentIds.forEach((id) => {
       const match = newMatches[id];
       if (match) {
@@ -302,7 +282,6 @@ const TournamentBracket = () => {
       }
     });
 
-    // Setze abhängige Matches zurück
     const playerSource: { [key: number]: { p1Source?: number; p2Source?: number } } = {
       5: { p2Source: 1 },
       6: { p2Source: 2 },
@@ -361,14 +340,12 @@ const TournamentBracket = () => {
     const winner = Object.keys(newPlacements).find((player) => newPlacements[player] === 1);
     const newGoldenTickets = { ...currentGoldenTickets };
 
-    // Remove Golden Tickets from all players except those in initialPlayers
     Object.keys(newGoldenTickets).forEach((player) => {
       if (!initialPlayers[player].goldenTicket) {
         newGoldenTickets[player] = false;
       }
     });
 
-    // Assign Golden Ticket to the winner if they don't already have one
     if (winner && !newGoldenTickets[winner]) {
       newGoldenTickets[winner] = true;
     }
@@ -397,7 +374,6 @@ const TournamentBracket = () => {
 
       affectedPlayers.forEach((player) => {
         delete newPlacements[player];
-        // Remove Golden Ticket if not in initialPlayers
         if (!initialPlayers[player]?.goldenTicket) {
           newGoldenTickets[player] = false;
         }
@@ -409,7 +385,6 @@ const TournamentBracket = () => {
     match.winner = winner;
     const loser = winner === match.p1 ? match.p2 : match.p1;
 
-    // Typ-Sicherheits-Check
     if (!loser) {
       console.warn(`Kein Verlierer für Match ${matchId}, da p1 oder p2 null ist.`);
       return;
@@ -511,7 +486,6 @@ const TournamentBracket = () => {
           match.winner = winner;
           const loser = winner === match.p1 ? match.p2 : match.p1;
 
-          // Typ-Sicherheits-Check
           if (!loser) {
             console.warn(`Kein Verlierer für Match ${id}, da p1 oder p2 null ist.`);
             continue;
@@ -595,14 +569,6 @@ const TournamentBracket = () => {
     setPlacements(newPlacements);
     setGoldenTickets(newGoldenTickets);
     saveToHistory(newMatches, newPlacements, newGoldenTickets);
-  };
-
-  const getCurrentPoints = (): { [key: string]: number } => {
-    const points: { [key: string]: number } = {};
-    Object.entries(initialPlayers).forEach(([name, data]) => {
-      points[name] = data.points + (placementPoints[placements[name]] || 0);
-    });
-    return points;
   };
 
   const getRankings = (): PlayerRanking[] => {
@@ -828,7 +794,6 @@ const TournamentBracket = () => {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-4"></div>
 
             {/* Lower Bracket */}
             <div className="bg-gray-700 rounded-xl p-4 border-gray-500 w-full">
@@ -882,7 +847,6 @@ const TournamentBracket = () => {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-4"></div>
 
             {/* Grand Finals */}
             <div className="bg-gray-700 rounded-xl p-4 border-gray-500">
@@ -908,7 +872,6 @@ const TournamentBracket = () => {
             <div className="grid grid-cols-1 gap-4">
               {showTiebreakerWarning && (
                   <div className="bg-yellow-700 text-white p-4 rounded-lg flex items-center relative gap-2 mt-4">
-                    {/*<div className="flex items-center gap-2 flex-1 min-w-0">*/}
                     <AlertTriangle className="w-5 h-5 flex-shrink-0"/>
                     <span className="pr-10 text-medium">
                       This application does not account for tiebreakers in cases where multiple players have equal total points for the world finals qualification.
@@ -982,7 +945,7 @@ const TournamentBracket = () => {
                   {sectionVisibility.leaderboard ? (
                     <ChevronDown className="w-6 h-6" />
                   ) : (
-                  <ChevronUp className="w-6 h-6" />
+                    <ChevronUp className="w-6 h-6" />
                   )}
                   Leaderboard (relevant)
                 </h2>
@@ -1012,7 +975,6 @@ const TournamentBracket = () => {
                             <span className="w-12 px-2 py-2 font-semibold text-gray-200">{index + 1}</span>
                             <span className="flex-1 px-4 py-2 font-medium flex items-center gap-2 text-gray-200">
                               {player.name}
-                              {player.goldenTicket}
                             </span>
                             <span className="flex-1 px-4 py-2 text-center">
                               {player.participating ? (
@@ -1057,7 +1019,7 @@ const TournamentBracket = () => {
                 </div>
               )}  
             </div>
-            
+
             {/* Footer mit Name und Twitter-Button */}
             <div className="flex justify-between items-center mt-6 text-gray-300">
               <span className="text-sm">Created by nitramGe</span>
@@ -1072,7 +1034,7 @@ const TournamentBracket = () => {
                   <SiX className="w-5 h-5" />
                 </a>
                 <a
-                  href="https//youtube.com/nitramGe"
+                  href="https://youtube.com/@nitramGe"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-right gap-2 px-3 py-1 bg-red-600 hover:bg-red-800 text-white rounded-lg transition-colors"
