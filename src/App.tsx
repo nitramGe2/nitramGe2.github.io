@@ -640,10 +640,10 @@ const TournamentBracket = () => {
         return 'tracking-wider uppercase italic font-bold bg-green-600 text-white';
       }
       if (isWinner) {
-        return 'bg-amber-700 text-white font-semibold';
+        return 'bg-amber-700 hover:bg-amber-700 text-white font-semibold';
       }
       if (isLoser) {
-        return 'bg-sky-950 text-gray-200';
+        return 'bg-sky-950 hover:bg-sky-700 text-gray-200';
       }
       return 'bg-sky-800 text-gray-100';
     };
@@ -685,18 +685,18 @@ const TournamentBracket = () => {
     <div className="min-h-screen bg-gray-800 p-4">
       <div className="w-full max-w-7xl min-w-[320px] mx-auto">
         <div className="bg-gray-800 rounded-xl shadow-2xl p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-yellow-500" />
-              <h1 className="text-3xl font-bold text-white">WHO MAKES WORLDS?</h1>
+          <div className="flex flex-col items-center mb-6">
+            <div className="flex items-center gap-3 bg-gray-600 rounded-3xl px-4 py-2">
+              <h1 className="text-5xl font-bold rounded-xl text-white"
+               style={{ WebkitTextStroke: '0.1px rgba(255, 255, 255, 1)' }}>WHO MAKES WORLDS?</h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex justify-center gap-2 w-full mt-8">
               <button
                 onClick={undo}
                 disabled={historyIndex <= 0}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   historyIndex > 0
-                    ? 'bg-indigo-700 hover:bg-indigo-900 text-white'
+                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
                     : 'bg-slate-600 text-gray-200 cursor-not-allowed'
                 }`}
               >
@@ -708,7 +708,7 @@ const TournamentBracket = () => {
                 disabled={historyIndex >= history.length - 1}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   historyIndex < history.length - 1
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                    ? 'bg-orange-700 hover:bg-orange-800 text-white'
                     : 'bg-slate-500 text-gray-200 cursor-not-allowed'
                 }`}
               >
@@ -717,7 +717,7 @@ const TournamentBracket = () => {
               </button>
               <button
                 onClick={fillRemainingRandom}
-                className="flex items-center gap-2 bg-purple-700 hover:bg-purple-900 text-gray-100 px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-900 text-gray-100 px-4 py-2 rounded-lg transition-colors"
               >
                 <Shuffle className="w-4 h-4" />
                 Fill out randomly
@@ -734,7 +734,7 @@ const TournamentBracket = () => {
 
           {/* Warnung bei unvollständigem Turnier mit X-Button */}
           {!isTournamentComplete() && showWarning && (
-            <div className="bg-yellow-700 text-white p-4 rounded-lg mb-6 flex items-center gap-2 relative">
+            <div className="bg-violet-700 bg-opacity-50 text-white p-4 rounded-lg mb-6 flex items-center gap-2 relative">
               <AlertTriangle className="w-5 h-5" />
               <span>
                 The leaderboard and qualified players list are being updated in real time. If you notice any bugs or errors,
@@ -871,11 +871,20 @@ const TournamentBracket = () => {
 
             <div className="grid grid-cols-1 gap-4">
               {showTiebreakerWarning && (
-                  <div className="bg-yellow-700 text-white p-4 rounded-lg flex items-center relative gap-2 mt-4">
+                  <div className="bg-violet-700 bg-opacity-50 text-white p-4 rounded-lg flex items-center relative gap-2 mt-4">
                     <AlertTriangle className="w-5 h-5 flex-shrink-0"/>
                     <span className="pr-10 text-medium">
-                      This application does not account for tiebreakers in cases where multiple players have equal total points for the world finals qualification.
-                      Please check for these cases yourself.
+                      <span className="pr-10 text-lg text-yellow-300 font-semibold"> This application does not account for tiebreakers! <br></br> </span>
+                      If 2 or more players have an equal number of total points,
+                      the player who is displayed as "qualified" in the tables below is chosen <span className="text-yellow-300 font-bold"> randomly</span>. <br></br>
+                      The first level tiebreaker is defined as "the total number of Event Final Wins".
+                      Please check the {''}
+                      <a
+                        href="https://drive.google.com/file/d/1IdQ2yZDVjEDaG-qrkZOoOWvlYD3NCoCl/view"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-yellow-300 hover:text-yellow-400 underline inline-block"
+                      >CRL 25 Official Rulebook</a> for more details.
                     </span>
                     <button
                       onClick={() => setShowTiebreakerWarning(false)}
