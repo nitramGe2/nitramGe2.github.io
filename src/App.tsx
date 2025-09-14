@@ -66,6 +66,12 @@ const TournamentBracket = () => {
     'Ryley': { points: 0, participating: true, goldenTicket: false, pastWins: 0, pastEFPoints: 0 },
     'Sweep': { points: 0, participating: true, goldenTicket: false, pastWins: 0, pastEFPoints: 0 },
     'Niuzi': { points: 0, participating: true, goldenTicket: false, pastWins: 0, pastEFPoints: 0 },
+    'Vitor75': {points: 80, participating: false, goldenTicket: false, pastWins: 3, pastEFPoints: 80},
+    'Samuel Bassotto': {points: 80, participating: false, goldenTicket: false, pastWins: 3, pastEFPoints: 0},
+    'Hugo': {points: 70, participating: false, goldenTicket: false, pastWins: 0, pastEFPoints: 40},
+    'Coco': {points: 70, participating: false, goldenTicket: false, pastWins: 0, pastEFPoints: 0},
+    'Clown': {points: 60, participating: false, goldenTicket: false, pastWins: 2, pastEFPoints: 60},
+    'issei': {points: 60, participating: false, goldenTicket: false, pastWins: 0, pastEFPoints: 0},
   };
 
   // Punkte für Platzierungen
