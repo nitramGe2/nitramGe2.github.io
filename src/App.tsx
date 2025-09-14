@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, RotateCcw, ChevronDown, ChevronUp, Shuffle, Undo, Redo, Ticket, AlertTriangle, X } from 'lucide-react';
+import { Trophy, RotateCcw, ChevronDown, ChevronUp, Shuffle, Undo, Redo, Ticket, AlertTriangle, X, Currency } from 'lucide-react';
 import { SiX, SiYoutube } from '@icons-pack/react-simple-icons';
 
 // Definiere Typen für die Datenstrukturen
@@ -7,6 +7,8 @@ interface Player {
   points: number;
   participating: boolean;
   goldenTicket: boolean;
+  pastWins: number;
+  pastEFPoints: number;
 }
 
 interface Match {
@@ -38,30 +40,32 @@ interface PlayerRanking {
   placement: string | number;
   participating: boolean;
   goldenTicket: boolean;
+  EFwins: number;
+  EFTotalPoints: number;
 }
 
 const TournamentBracket = () => {
   // Alle Spieler mit ihren Startpunkten (vor diesem Turnier)
   const initialPlayers: { [key: string]: Player } = {
-    'CAL Sub': { points: 210, participating: false, goldenTicket: false },
-    'Lucas': { points: 200, participating: false, goldenTicket: false },
-    'Mohamed Light': { points: 190, participating: true, goldenTicket: true },
-    'Adriel': { points: 160, participating: false, goldenTicket: true },
-    'Ian77': { points: 150, participating: true, goldenTicket: true },
-    'Egor': { points: 125, participating: true, goldenTicket: false },
-    'Mugi': { points: 125, participating: true, goldenTicket: false },
-    'CAL Pedro': { points: 115, participating: true, goldenTicket: false },
-    'SK xopxsam': { points: 110, participating: true, goldenTicket: false },
-    'Kitashyan': { points: 100, participating: false, goldenTicket: false },
-    'Wallace': { points: 95, participating: false, goldenTicket: false },
-    'CAL Sandbox': { points: 90, participating: true, goldenTicket: false },
-    'Ardentoas': { points: 90, participating: false, goldenTicket: false },
-    'GençAslan': { points: 85, participating: false, goldenTicket: false },
-    'Viiper': { points: 80, participating: true, goldenTicket: false },
-    'Asaf': { points: 15, participating: true, goldenTicket: false },
-    'Ryley': { points: 0, participating: true, goldenTicket: false },
-    'Sweep': { points: 0, participating: true, goldenTicket: false },
-    'Niuzi': { points: 0, participating: true, goldenTicket: false },
+    'CAL Sub': { points: 210, participating: false, goldenTicket: false, pastWins: 11, pastEFPoints: 180 },
+    'Lucas': { points: 200, participating: false, goldenTicket: false, pastWins: 7, pastEFPoints: 200 },
+    'Mohamed Light': { points: 190, participating: true, goldenTicket: true, pastWins: 8, pastEFPoints: 160 },
+    'Adriel': { points: 160, participating: false, goldenTicket: true, pastWins: 7, pastEFPoints: 160 },
+    'Ian77': { points: 150, participating: true, goldenTicket: true, pastWins: 7, pastEFPoints: 150 },
+    'Egor': { points: 125, participating: true, goldenTicket: false, pastWins: 4, pastEFPoints: 110 },
+    'Mugi': { points: 125, participating: true, goldenTicket: false, pastWins: 3, pastEFPoints: 100 },
+    'CAL Pedro': { points: 115, participating: true, goldenTicket: false, pastWins: 7, pastEFPoints: 90 },
+    'SK xopxsam': { points: 110, participating: true, goldenTicket: false, pastWins: 3, pastEFPoints: 110 },
+    'Kitashyan': { points: 100, participating: false, goldenTicket: false, pastWins: 2, pastEFPoints: 100 },
+    'Wallace': { points: 95, participating: false, goldenTicket: false, pastWins: 0, pastEFPoints: 40 },
+    'CAL Sandbox': { points: 90, participating: true, goldenTicket: false, pastWins: 3, pastEFPoints: 70 },
+    'Ardentoas': { points: 90, participating: false, goldenTicket: false, pastWins: 2, pastEFPoints: 90 },
+    'GençAslan': { points: 85, participating: false, goldenTicket: false, pastWins: 2, pastEFPoints: 50 },
+    'Viiper': { points: 80, participating: true, goldenTicket: false, pastWins: 3, pastEFPoints: 80 },
+    'Asaf': { points: 15, participating: true, goldenTicket: false, pastWins: 0, pastEFPoints: 0 },
+    'Ryley': { points: 0, participating: true, goldenTicket: false, pastWins: 0, pastEFPoints: 0 },
+    'Sweep': { points: 0, participating: true, goldenTicket: false, pastWins: 0, pastEFPoints: 0 },
+    'Niuzi': { points: 0, participating: true, goldenTicket: false, pastWins: 0, pastEFPoints: 0 },
   };
 
   // Punkte für Platzierungen
@@ -573,6 +577,18 @@ const TournamentBracket = () => {
 
   const getRankings = (): PlayerRanking[] => {
     const eliminatedCount = Object.keys(placements).length;
+
+    const currentWins: { [key: string]: number } = {};
+    Object.entries(initialPlayers).forEach(([name]) => {
+      currentWins[name] = 0;
+    });
+    Object.values(matches).forEach((match) => {
+      if (match.winner) {
+        currentWins[match.winner] = (currentWins[match.winner] || 0) +1
+      }
+    });
+
+
     return Object.entries(initialPlayers)
       .map(([name, data]) => {
         const tournamentPoints = getMinTournamentPoints(name, eliminatedCount);
@@ -584,9 +600,19 @@ const TournamentBracket = () => {
           placement: placements[name] || '-',
           participating: data.participating,
           goldenTicket: goldenTickets[name],
+          EFwins: data.pastWins + (currentWins[name] || 0),
+          EFTotalPoints: data.pastEFPoints + tournamentPoints,
         };
       })
-      .sort((a, b) => b.totalPoints - a.totalPoints);
+      .sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) {
+          return b.totalPoints - a.totalPoints; // Primary: Total points descending
+        }
+        if (b.EFwins !== a.EFwins) {
+          return b.EFwins - a.EFwins;
+        }
+        return b.EFwins - a.EFwins; // Tiebreaker: Wins descending
+  });
   };
 
   const isTournamentComplete = () => {
@@ -656,7 +682,7 @@ const TournamentBracket = () => {
     const p1Class = getPlayerClass(match.p1, isP1Winner, isP1Loser);
     const p2Class = getPlayerClass(match.p2, isP2Winner, isP2Loser);
 
-    const hoverClass = canSelectWinner ? 'hover:bg-sky-700 cursor-pointer' : '';
+    const hoverClass = canSelectWinner ? 'hover:bg-slate-700 cursor-pointer' : '';
 
     return (
       <div className="bg-gray-600 rounded-lg shadow-xl p-3 mb-2 border-2 border-gray-400 w-full max-w-64">
@@ -874,10 +900,12 @@ const TournamentBracket = () => {
                   <div className="bg-violet-700 bg-opacity-50 text-white p-4 rounded-lg flex items-center relative gap-2 mt-4">
                     <AlertTriangle className="w-5 h-5 flex-shrink-0"/>
                     <span className="pr-10 text-medium">
-                      <span className="pr-10 text-lg text-yellow-300 font-semibold"> This application does not account for tiebreakers! <br></br> </span>
-                      If 2 or more players have an equal number of total points,
-                      the player who is displayed as "qualified" in the tables below is chosen <span className="text-yellow-300 font-bold"> randomly</span>. <br></br>
-                      The first level tiebreaker is defined as "the total number of Event Final Wins".
+                      <span className="pr-10 text-lg text-yellow-300 font-semibold"> This application now includes tiebreakers! :D <br></br> </span>
+                      If 2 or more players have an equal number of total points, the standing is determined by the total number of their 
+                      <span className="text-yellow-300 font-bold"> Event Final Wins (duels)</span>. <br></br>
+                      If that is also equal, the standing is determined by the total number of
+                      <span className="text-yellow-300 font-bold"> points collected in only Event Finals</span>. <br></br>
+                      I can't promise having implemented all the data and rules correctly so I take no responsibility in the accuracy of the results. <br></br>
                       Please check the {''}
                       <a
                         href="https://drive.google.com/file/d/1IdQ2yZDVjEDaG-qrkZOoOWvlYD3NCoCl/view"
@@ -965,12 +993,14 @@ const TournamentBracket = () => {
                       <div className="flex bg-gray-700 rounded p-2 border-gray-500">
                         <span className="w-12 py-2 text-left text-sm font-semibold text-gray-200">Rank</span>
                         <span className="flex-1 px-4 py-2 text-left text-sm font-semibold text-gray-200">Player</span>
-                        <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Participation</span>
-                        <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Placement</span>
                         <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Starting Points</span>
                         <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">(Min.) Tournament Points</span>
                         <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Total</span>
-                        <span className="flex-1 px-4 py-2 text-right text-sm font-semibold text-gray-200">Status</span>
+                        <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Placement</span>
+                        <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Participation</span>
+                        <span className="w-16 px-4 py-2 text-center text-sm font-semibold text-gray-200">EF Wins</span>
+                        <span className="w-16 px-4 py-2 text-center text-sm font-semibold text-gray-200">EF Points</span>
+                        <span className="flex-1 px-4 py-2 text-center text-sm font-semibold text-gray-200">Status</span>
                       </div>
                       {getRankings().map((player, index, rankings) => {
                         const isQualified = getQualified().some((q) => q.name === player.name);
@@ -985,13 +1015,11 @@ const TournamentBracket = () => {
                             <span className="flex-1 px-4 py-2 font-medium flex items-center gap-2 text-gray-200">
                               {player.name}
                             </span>
-                            <span className="flex-1 px-4 py-2 text-center">
-                              {player.participating ? (
-                                <span className="text-gray-200">Yes</span>
-                              ) : (
-                                <span className="text-gray-200">No</span>
-                              )}
+                            <span className="flex-1 px-4 py-2 text-center text-gray-200">{player.basePoints}</span>
+                            <span className="flex-1 px-4 py-2 text-center text-gray-200">
+                              {player.tournamentPoints > 0 ? `+${player.tournamentPoints}` : '-'}
                             </span>
+                            <span className="flex-1 px-4 py-2 text-center text-lg font-bold text-fuchsia-400">{player.totalPoints}</span>
                             <span className="flex-1 px-4 py-2 text-center text-gray-200">
                               {player.placement !== '-' ? (
                                 Number(player.placement) === 6 ? '5. – 6.' :
@@ -1000,23 +1028,29 @@ const TournamentBracket = () => {
                                 `${player.placement}.`
                               ) : '-'}
                             </span>
-                            <span className="flex-1 px-4 py-2 text-center text-gray-200">{player.basePoints}</span>
-                            <span className="flex-1 px-4 py-2 text-center text-gray-200">
-                              {player.tournamentPoints > 0 ? `+${player.tournamentPoints}` : '-'}
+                            
+                            <span className="flex-1 px-4 py-2 text-center">
+                              {player.participating ? (
+                                <span className="text-gray-200">Yes</span>
+                              ) : (
+                                <span className="text-gray-200">No</span>
+                              )}
                             </span>
-                            <span className="flex-1 px-4 py-2 text-center font-bold text-gray-100">{player.totalPoints}</span>
+                            
+                            <span className="w-16 px-4 py-2 text-center text-gray-200">{player.EFwins}</span>
+                            <span className="w-16 px-4 py-2 text-center text-gray-200">{player.EFTotalPoints}</span>
                             <span className="flex-1 px-4 py-2 text-center">
                               {player.goldenTicket ? (
-                                <span className="inline-block bg-yellow-600 text-white px-2 py-1 rounded-full text-xs font-medium whitespace-normal break-words">
-                                  Golden Ticket
+                                <span className="inline-block bg-yellow-600 text-white px-3 py-2 rounded-full text-xs font-bold whitespace-normal break-words">
+                                  GT
                                 </span>
                               ) : isQualified ? (
-                                <span className="inline-block bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium whitespace-normal break-words">
-                                  Qualified
+                                <span className="inline-block bg-green-600 text-white px-3 py-2 rounded-full text-xs font-bold whitespace-normal break-words">
+                                  Q
                                 </span>
                               ) : (
-                                <span className="inline-block bg-gray-600 text-gray-300 px-2 py-1 rounded-full text-xs whitespace-normal break-words">
-                                  Not qualified
+                                <span className="inline-block bg-gray-600 text-gray-300 px-3 py-2 rounded-full text-xs font-bold whitespace-normal break-words">
+                                  NQ
                                 </span>
                               )}
                             </span>
